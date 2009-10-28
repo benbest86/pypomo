@@ -1,0 +1,76 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+	<head>
+		<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+		<meta http-equiv="Content-Language" content="en-us" />
+	
+		<link rel="stylesheet" href="{{ MEDIA_URL }}pypomo.css" type="text/css" />
+		{% block extra_head %} {% endblock %}		
+		<title>PyPomo Time Tracker</title>
+	</head>	
+	<body>
+    <div id="container">
+        <div id="header">
+            {% block header %}
+            <div id="logo">
+                <h1><a href="{% url home %}">PyPomo</a></h1>
+            </div><!-- /logo -->
+            {% comment %}
+            <div id="accounts">
+                {% block accounts %}
+                {% if user.is_authenticated %}
+                    <a href="{% url logout %}">Logout</a>
+                {% else %}
+                    <a href="{% url login %}">Login</a>
+                    <a href="{% url signup %}">Sign up!</a>
+                {% endif %}
+                {% endblock accounts %}
+            </div><!-- /accounts -->
+            {% endcomment %}
+            {% endblock header %}
+        </div><!-- /header -->
+        <div id="titlebar">
+            {% block titlebar %}
+            <div id="pagetitle">
+                {% block pagetitle %}
+                {% endblock pagetitle %}
+            </div>
+            <div id="navigation">
+                {% block navigation %}
+                {% endblock navigation %}
+            </div><!-- /navigation -->
+            {% endblock titlebar %}
+        </div><!-- /titlebar -->
+        <div id="messages">
+            {% block messages %}
+            {% if messages %}
+            <ul id="messages">
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+            {% endif %}
+            {% endblock messages %}
+        </div><!-- /messages -->
+        <div id="content">
+            {% block content %}
+                <div id="main">
+                    {% block main %}
+                    {% endblock main %}
+                </div><!-- /main -->
+                <div id="sidebar">
+                    {% block sidebar %}
+                    {% endblock sidebar %}
+                </div><!-- /sidebar -->
+            {% endblock content %}
+        </div><!-- /content -->
+        <div id="footer">
+            {% block footer %}
+            {% endblock footer %}
+        </div><!-- /footer -->
+        {% block scripts %}
+        {% endblock scripts %}
+    </div><!-- /container -->
+	</body>
+</html>
