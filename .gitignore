@@ -1,0 +1,9 @@
+# ignore compiled python files
+*.pyc
+
+# ignore vim swp files
+*.swp
+
+# ignore sqlite and db files
+*.sqlite
+*.db
