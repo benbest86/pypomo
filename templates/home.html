@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {{ block.super }} - Dashboard
+{% endblock title %}
+
+{% block pagetitle %}
+<h1>Dashboard</h1>
+{% endblock pagetitle %}
+
+{% block main %}
+    <h2>Daily Productivity</h1>
+    <div id="graph">
+    </div>
+{% endblock main %}
+
+{% block sidebar %}
+<h2>Recent Inbox Items</h2> 
+{% endblock sidebar %}
+
+{% block scripts %}
+{% endblock scripts %}

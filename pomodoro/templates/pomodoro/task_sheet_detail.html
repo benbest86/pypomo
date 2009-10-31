@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {{ block.super }} - {{ task_sheet }}
+{% endblock title %}
+
+{% block pagetitle %}
+    <h1>{{ task_sheet }}</h1>
+{% endblock pagetitle %}
+
+{% block main %}
+{% if current_pomodoro %}
+    <h2>Current Pomodoro</h2>
+    <p><strong>Task: </strong> {{ current_pomodoro.task }}</p>
+    <p><strong>Started at: </strong> {{ current_pomodoro.start }}</p>
+    <form action="{% url complete_pomodoro %}" method="POST">
+        <input type="submit" value="Complete" />
+    </form>
+    <form action="{% url cancel_pomodoro %}" method="POST">
+        <input type="submit" value="Cancel" />
+    </form>
+    <form action="{% url add_internal_interruption %}" method="POST">
+        <input type="submit" value="'" />
+    </form>
+    <form action="{% url add_external_interruption %}" method="POST">
+        <input type="submit" value="-" />
+    </form>
+{% endif %}
+<h2>Task List</h2>
+<table id="task-list">
+    <thead>
+        <tr>
+            <th>Name: </th>
+            <th>Estimate/Actual</th>
+            <th>Marks</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for task in task_sheet %}
+            <tr class="{% cycle "odd" "even" %}">
+                <td>{{ task.name }}</td>
+                <td>{{ task.estimate }}/{% if task.completed %}{{ task.pomodoros.count }}{% else %}?{% endif %}</td>
+                <td>
+                    {% for mark in task.marks %}
+                        <a href="{% mark.get_absolute_url %}">{{ mark.mark_view }}</a> 
+                    {% endfor %}
+                    {% if task.completed %}
+                        Done
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<form action="{% url tasks_index task_sheet.id %}" method="POST">
+    <table id="task-form">
+        <tbody>
+            <tr>
+                <td>{{ task_form.name }}</td>
+                <td>{{ task_form.estimate }}</td>
+                <td><input type="submit" value="add" /></td>
+            </tr>
+        </tbody>
+    </table>
+</form>
+{% endblock main %}
+
+{% block sidebar %}
+<h2>Add to Inbox</h2>
+<form action="{% url inbox_items_index %}" method="POST">
+    {{ inbox_item_form.as_p }}
+    <input type="submit" value="Add to Inbox" />
+</form>
+{% endblock sidebar %}
+
+{% block scripts %}
+{% endblock scripts %}

@@ -7,7 +7,7 @@
 	
 		<link rel="stylesheet" href="{{ MEDIA_URL }}pypomo.css" type="text/css" />
 		{% block extra_head %} {% endblock %}		
-		<title>PyPomo Time Tracker</title>
+        <title>{% block title %}PyPomo Time Tracker{% endblock title %}</title>
 	</head>	
 	<body>
     <div id="container">
@@ -38,6 +38,11 @@
             </div>
             <div id="navigation">
                 {% block navigation %}
+                <ul id="navigation">
+                    <li><a href="{% url home %}">Dashboard</a></li>
+                    <li><a href="{% url active_sheet %}">Active Sheet</a></li>
+                    <li><a href="{% url stats %}">Stats</a></li>
+                </ul>
                 {% endblock navigation %}
             </div><!-- /navigation -->
             {% endblock titlebar %}

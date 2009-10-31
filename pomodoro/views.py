@@ -54,6 +54,8 @@ def task_sheet_detail(request, task_sheet_id, template_name='pomodoro/task_sheet
                 template_name,
                 {
                     'task_sheet': task_sheet,
+                    'inbox_item_form': inbox_item_form,
+                    'task_form': task_form,
                     },
                 context_instance=RequestContext(request),
                 )
@@ -208,14 +210,12 @@ def delete_task(request, task_sheet_id, task_id):
     
 
 
-def inbox_items_index(request, task_sheet_id, template_name='pomodoro/inbox_items_index.html'):
-    task_sheet = get_object_or_404(TaskSheet, id=task_sheet_id)
+def inbox_items_index(request, template_name='pomodoro/inbox_items_index.html'):
     if request.method == 'GET':
-        inbox_items = InboxItem.objects.filter(task_sheet=task_sheet)
+        inbox_items = InboxItem.objects.filter(dealt_with=False)
         return render_to_response(
                 template_name,
                 {
-                    'task_sheet': task_sheet,
                     'inbox_items': inbox_items,
                     },
                 context_instance=RequestContext(request),
@@ -223,10 +223,13 @@ def inbox_items_index(request, task_sheet_id, template_name='pomodoro/inbox_item
     elif request.method == 'POST':
         form = InboxItemForm(request.POST)
         if form.is_valid():
-            inbox_item = form.save(commit=False)
-            inbox_item.task_sheet = task_sheet
-            inbox_item.save()
-            return HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': task_sheet.id,}))
+            inbox_item = form.save()
+            # get current task_sheet
+            task_sheet = TaskSheet.objects.get_current()
+            if task_sheet:
+                return HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': task_sheet.id,}))
+            else:
+                return HttpResponseRedirect(reverse('home'))
         else:
             template_name = 'pomodoro/new_inbox_item.html'
             return render_to_response(
@@ -238,22 +241,19 @@ def inbox_items_index(request, task_sheet_id, template_name='pomodoro/inbox_item
                     context_instance=RequestContext(request),
                     )
 
-def new_inbox_item(request, task_sheet_id, template_name='pomodoro/new_inbox_item.html'):
+def new_inbox_item(request, template_name='pomodoro/new_inbox_item.html'):
     # Handle POST to new as a create request
     if request.method == 'POST':
-        return inbox_items_index(request, task_sheet_id)
-    task_sheet = get_object_or_404(TaskSheet, id=task_sheet_id)
+        return inbox_items_index(request)
     form = InboxItemForm()
     return render_to_response(
             template_name,
             {
                 'form': form,
-                'task_sheet': task_sheet,
                 },
             context_instance=RequestContext(request),
             )
-def inbox_item_detail(request, task_sheet_id, inbox_item_id, template_name='pomodoro/inbox_item_detail.html'):
-    task_sheet = get_object_or_404(TaskSheet, id=task_sheet_id)
+def inbox_item_detail(request, inbox_item_id, template_name='pomodoro/inbox_item_detail.html'):
     inbox_item = get_object_or_404(InboxItem, id=inbox_item_id)
     # retrieve details
     if request.method == 'GET':
@@ -261,10 +261,9 @@ def inbox_item_detail(request, task_sheet_id, inbox_item_id, template_name='pomo
                 template_name,
                 {
                     'inbox_item': inbox_item,
-                    'task_sheet': task_sheet,
-                    },
+                },
                 context_instance=RequestContext(request),
-                )
+            )
         # update existing resource
     elif request.method == 'POST':
         form = InboxItemForm(request.POST, instance=inbox_item)
@@ -275,7 +274,6 @@ def inbox_item_detail(request, task_sheet_id, inbox_item_id, template_name='pomo
                     template_name,
                     {
                         'inbox_item': inbox_item,
-                        'task_sheet': task_sheet,
                         },
                     context_instance=RequestContext(request),
                     )
@@ -286,16 +284,14 @@ def inbox_item_detail(request, task_sheet_id, inbox_item_id, template_name='pomo
                     {
                         'form': form,
                         'inbox_item': inbox_item,
-                        'task_sheet': task_sheet,
                         },
                     context_instance=RequestContext(request),
                     )
 
-def edit_inbox_item(request, task_sheet_id, inbox_item_id, template_name='pomodoro/edit_inbox_item.html'):
+def edit_inbox_item(request, inbox_item_id, template_name='pomodoro/edit_inbox_item.html'):
     # if a POST is received, direct it to resource detail for update
     if request.method == 'POST':
-        return inbox_item_detail(request, task_sheet_id, inbox_item_id)
-    task_sheet = get_object_or_404(TaskSheet, id=task_sheet_id)
+        return inbox_item_detail(request, inbox_item_id)
     inbox_item = get_object_or_404(InboxItem, id=inbox_item_id)
     form = InboxItemForm(instance=inbox_item)
     return render_to_response(
@@ -303,17 +299,19 @@ def edit_inbox_item(request, task_sheet_id, inbox_item_id, template_name='pomodo
             {
                 'form': form,
                 'inbox_item': inbox_item,
-                'task_sheet': task_sheet,
                 },
             context_instance=RequestContext(request),
             )
 def delete_inbox_item(request, task_sheet_id, inbox_item_id):
-    task_sheet = get_object_or_404(TaskSheet, id=task_sheet_id)
     inbox_item = get_object_or_404(InboxItem, id=inbox_item_id)
+    task_sheet = TaskSheet.objects.get_current()
     if request.method == 'POST':
         inbox_item.delete()
-        return HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': task_sheet.id}))
-    
+        if task_sheet:
+            return HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': task_sheet.id}))
+        else:
+            return HttpResponseRedirect(reverse('home'))
+
 
 def reflections_index(request, task_sheet_id, template_name='pomodoro/reflections_index.html'):
     task_sheet = get_object_or_404(TaskSheet, id=task_sheet_id)
@@ -361,7 +359,7 @@ def new_reflection(request, task_sheet_id, template_name='pomodoro/new_reflectio
             )
 def reflection_detail(request, task_sheet_id, reflection_id, template_name='pomodoro/reflection_detail.html'):
     task_sheet = get_object_or_404(TaskSheet, id=task_sheet_id)
-    reflection = get_object_or_404(Reflection, id=reflection_id)
+    reflection = get_object_or_404(Reflection, id=reflection_id, task_sheet=task_sheet)
     # retrieve details
     if request.method == 'GET':
         return render_to_response(
@@ -403,7 +401,7 @@ def edit_reflection(request, task_sheet_id, reflection_id, template_name='pomodo
     if request.method == 'POST':
         return reflection_detail(request, task_sheet_id, reflection_id)
     task_sheet = get_object_or_404(TaskSheet, id=task_sheet_id)
-    reflection = get_object_or_404(Reflection, id=reflection_id)
+    reflection = get_object_or_404(Reflection, id=reflection_id, task_sheet=task_sheet)
     form = ReflectionForm(instance=reflection)
     return render_to_response(
             template_name,
@@ -416,7 +414,7 @@ def edit_reflection(request, task_sheet_id, reflection_id, template_name='pomodo
             )
 def delete_reflection(request, task_sheet_id, reflection_id):
     task_sheet = get_object_or_404(TaskSheet, id=task_sheet_id)
-    reflection = get_object_or_404(Reflection, id=reflection_id)
+    reflection = get_object_or_404(Reflection, id=reflection_id, task_sheet=task_sheet)
     if request.method == 'POST':
         reflection.delete()
         return HttpResponseRedirect(reverse('reflections_index', kwargs={'task_sheet_id': task_sheet.id}))
