@@ -157,7 +157,7 @@ p {
 
 #navigation {
     font-size: 90%;
-    left: 638px;
+    left: 646px;
     margin: 0;
     position: absolute;
 }
@@ -190,4 +190,17 @@ p {
 #footer {
     background-color: #A0B2F1;
     margin: 0;
+}
+
+#navigation li {
+    display: inline;
+}
+
+#navigation a {
+    text-decoration: none;
+    color: white;
+}
+
+#navigation a:hover {
+    text-decoration: underline;
 }

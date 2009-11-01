@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block pagetitle %}
+<h1>New Task Sheet</h1>
+{% endblock pagetitle %}
+
+{% block main %}
+<form action="" method="POST">
+    {{ form.as_p }}
+    <input type="submit" value="Create" />
+</form>
+{% endblock main %}

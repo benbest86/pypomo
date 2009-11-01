@@ -10,7 +10,7 @@ class TaskSheetManager(models.Manager):
         Gets the current open task sheet or
         None if no task sheet is open.
         """
-        qs = self.get_queryset()
+        qs = self.get_query_set()
         open_task_sheets = qs.filter(closed=None)
 
         if open_task_sheets.count() == 0:
@@ -30,6 +30,7 @@ class TaskSheet(models.Model):
     closed = models.DateTimeField(null=True, blank=True)
 
     objects = TaskSheetManager()
+
 
 class Task(models.Model):
     """
@@ -64,29 +65,51 @@ class Mark(models.Model):
     """
     task = models.ForeignKey(Task)
 
-class Pomodoro(models.Model):
+    def get_absolute_url(self):
+        """
+        Needs to get the downcasted version.
+        """
+        pass
+
+
+
+class PomodoroManager(models.Manager):
+    
+    def get_current(self):
+        """
+        """
+        qs = self.get_query_set()
+        ongoing_pomodoros = qs.filter(end=None)
+        if open_pomodoros.count() == 0:
+            return None
+        else:
+            # this intentionally raises an Exception when more than
+            # one pomodoro is ongoing. This should theoretically never happen.
+            return open_pomodoros.get()
+
+
+class Pomodoro(Mark):
     """
     One pomodoro time period. Has a start and an end
     time with a flag for whether the pomodoro was cancelled
     mid way through.
     """
-    task = models.ForeignKey(Task)
     start = models.DateTimeField(auto_now_add=True)
     end = models.DateTimeField(null=True, blank=True)
     cancelled = models.BooleanField(default=False)
+
+    objects = PomodoroManager()
     
-class InternalInterruption(models.Model):
+class InternalInterruption(Mark):
     """
     Represents a ' in the pomodoro technique.
     """
-    task = models.ForeignKey(Task)
     time = models.DateTimeField(auto_now_add=True)
 
-class ExternalInterruption(models.Model):
+class ExternalInterruption(Mark):
     """
     Represents a - in the pomodoro technique.
     """
-    task = models.ForeignKey(Task)
     time = models.DateTimeField(auto_now_add=True)
 
 class Reflection(models.Model):

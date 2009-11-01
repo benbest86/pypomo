@@ -1,11 +1,22 @@
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.core.urlresolvers import reverse
 
 from pomodoro.models import TaskSheet, Task, InboxItem, Reflection, Pomodoro, \
         InternalInterruption, ExternalInterruption
+from pomodoro.forms import TaskSheetForm, InboxItemForm, TaskForm
 
 # task sheets
+
+def active_sheet(request):
+    active_sheet = TaskSheet.objects.get_current()
+    if active_sheet is not None:
+        response = HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': task_sheet_id}))
+    else:
+        response = HttpResponseRedirect(reverse('new_task_sheet'))
+    return response
+
 def task_sheets_index(request, template_name='pomodoro/task_sheets_index.html'):
     if request.method == 'GET':
         task_sheets = TaskSheet.objects.all()
@@ -50,6 +61,8 @@ def task_sheet_detail(request, task_sheet_id, template_name='pomodoro/task_sheet
 
     # retrieve details
     if request.method == 'GET':
+        inbox_item_form = InboxItemForm()
+        task_form = TaskForm()
         return render_to_response(
                 template_name,
                 {
@@ -420,6 +433,32 @@ def delete_reflection(request, task_sheet_id, reflection_id):
         return HttpResponseRedirect(reverse('reflections_index', kwargs={'task_sheet_id': task_sheet.id}))
     
 
+def complete_pomodoro(request):
+    current_pomodoro = Pomodoro.objects.get_current()
+    if current_pomodoro is not None:
+        current_pomodoro.end = datetime.datetime.now()
+        current_pomodoro.save()
+    current_task_sheet = TaskSheet.objects.get_current()
+    if current_task_sheet:
+        response = HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': current_task_sheet.id}))
+    else:
+        response = HttpResponseRedirect(reverse('task_sheets_index'))
+    return response
+
+def cancel_pomodoro(request):
+    current_pomodoro = Pomodoro.objects.get_current()
+    if current_pomodoro is not None:
+        current_pomodoro.cancelled = True
+        current_pomodoro.end = datetime.datetime.now()
+        current_pomodoro.save()
+    current_task_sheet = TaskSheet.objects.get_current()
+    if current_task_sheet:
+        response = HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': current_task_sheet.id}))
+    else:
+        response = HttpResponseRedirect(reverse('task_sheets_index'))
+    return response
+
+
 def pomodoros_index(request, task_sheet_id, task_id, template_name='pomodoro/pomodoros_index.html'):
     task_sheet = get_object_or_404(TaskSheet, id=task_sheet_id)
     task = get_object_or_404(Task, task_sheet=TaskSheet, id=task_id)
@@ -491,6 +530,18 @@ def pomodoro_detail(request, task_sheet_id, task_id, pomodoro_id, template_name=
                     context_instance=RequestContext(request),
                     )
 
+def add_internal_interruption(request):
+    current_pomodoro = Pomodoro.objects.get_current()
+    if current_pomodoro is not None:
+        InternalInterruption.objects.create(task=current_pomodoro.task)
+    current_task_sheet = TaskSheet.objects.get_current()
+    if current_task_sheet:
+        response = HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': current_task_sheet.id}))
+    else:
+        response = HttpResponseRedirect(reverse('task_sheets_index'))
+    return response
+
+
 def internal_interruptions_index(request, task_sheet_id, task_id, template_name='pomodoro/internal_interruptions_index.html'):
     task_sheet = get_object_or_404(TaskSheet, id=task_sheet_id)
     task = get_object_or_404(Task, task_sheet=TaskSheet, id=task_id)
@@ -521,6 +572,17 @@ def internal_interruptions_index(request, task_sheet_id, task_id, template_name=
                         },
                     context_instance=RequestContext(request),
                     )
+
+def add_external_interruption(request):
+    current_pomodoro = Pomodoro.objects.get_current()
+    if current_pomodoro is not None:
+        ExternalInterruption.objects.create(task=current_pomodoro.task)
+    current_task_sheet = TaskSheet.objects.get_current()
+    if current_task_sheet:
+        response = HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': current_task_sheet.id}))
+    else:
+        response = HttpResponseRedirect(reverse('task_sheets_index'))
+    return response
 
 
 def external_interruptions_index(request, task_sheet_id, task_id, template_name='pomodoro/external_interruptions_index.html'):

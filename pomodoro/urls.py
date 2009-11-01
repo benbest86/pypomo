@@ -8,9 +8,11 @@ urlpatterns = patterns('pomodoro.views',
     url(r'^cancel_pomodoro/$', 'cancel_pomodoro', name='cancel_pomodoro'),
     url(r'^add_internal_interruption/$', 'add_internal_interruption', name='add_internal_interruption'),
     url(r'^add_external_interruption/$', 'add_external_interruption', name='add_external_interruption'),
+    url(r'^active_sheet/$', 'active_sheet', name='active_sheet'),
 
     # task sheets
     url(r'^task_sheets/$', 'task_sheets_index',),
+    url(r'^task_sheets/new/$', 'new_task_sheet', name='new_task_sheet',),
     url(r'^task_sheets/(?P<task_sheet_id>\d+)/$', 'task_sheet_detail', name='task_sheet_detail'),
 
 
