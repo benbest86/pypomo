@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {{ block.super }} - New Task
+{% endblock title %}
+
+{% block pagetitle %}
+<h1>New Task</h1>
+{% endblock pagetitle %}
+
+{% block main %}
+<form action="" method="POST">
+    {{ form.as_p }}
+    <input type="submit" value="Add" />
+</form>
+{% endblock main %}
+
+{% block sidebar %}
+{% endblock sidebar %}
+
+{% block scripts %}
+{% endblock scripts %}

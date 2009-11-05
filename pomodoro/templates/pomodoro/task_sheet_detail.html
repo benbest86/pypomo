@@ -36,16 +36,21 @@
         </tr>
     </thead>
     <tbody>
-        {% for task in task_sheet %}
+        {% for task in task_sheet.tasks.all %}
             <tr class="{% cycle "odd" "even" %}">
-                <td>{{ task.name }}</td>
+                <td>{% if task.completed %}<del>{% endif %}{{ task.name }}{% if task.completed %}</del>{% endif %}</td>
                 <td>{{ task.estimate }}/{% if task.completed %}{{ task.pomodoros.count }}{% else %}?{% endif %}</td>
                 <td>
-                    {% for mark in task.marks %}
-                        <a href="{% mark.get_absolute_url %}">{{ mark.mark_view }}</a> 
+                    {% for mark in task.marks.all %}
+                        {{ mark }}
                     {% endfor %}
-                    {% if task.completed %}
-                        Done
+                    {% if not current_pomodoro and not task.completed %}
+                    <form action="{% url pomodoros_index task_sheet.id task.id %}" method="POST">
+                        <input type="submit" value="Start Pomodoro" />
+                    </form>
+                    <form action="{% url complete_task task_sheet.id task.id %}" method="POST">
+                        <input type="submit" value="Done" />
+                    </form>
                     {% endif %}
                 </td>
             </tr>
@@ -63,7 +68,13 @@
         </tbody>
     </table>
 </form>
+{% if not task_sheet.closed %}
+<form action="{% url close_task_sheet task_sheet.id %}" method="POST">
+    <input type="submit" value="Close Sheet" />
+</form>
+{% endif %}
 {% endblock main %}
+
 
 {% block sidebar %}
 <h2>Add to Inbox</h2>

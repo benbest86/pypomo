@@ -14,12 +14,19 @@ urlpatterns = patterns('pomodoro.views',
     url(r'^task_sheets/$', 'task_sheets_index',),
     url(r'^task_sheets/new/$', 'new_task_sheet', name='new_task_sheet',),
     url(r'^task_sheets/(?P<task_sheet_id>\d+)/$', 'task_sheet_detail', name='task_sheet_detail'),
+    url(r'^task_sheets/(?P<task_sheet_id>\d+)/close/$', 'close_task_sheet', name='close_task_sheet'),
 
 
-    # tasks and inbox items
+    # tasks and 
     url(r'^task_sheets/(?P<task_sheet_id>\d+)/tasks/$', 'tasks_index', name='tasks_index'),
     url(r'^task_sheets/(?P<task_sheet_id>\d+)/tasks/(?P<task_id>\d+)/$', 'task_detail', name='task_detail'),
+    url(r'^task_sheets/(?P<task_sheet_id>\d+)/tasks/(?P<task_id>\d+)/complete/$', 'complete_task', name='complete_task'),
 
+    # pomodoros
+    url(r'^task_sheets/(?P<task_sheet_id>\d+)/tasks/(?P<task_id>\d+)/pomodoros/$', 'pomodoros_index', name='pomodoros_index'),
+
+    # inbox items
     url(r'^inbox_items/$', 'inbox_items_index', name='inbox_items_index'),
     url(r'^inbox_items/(?P<inbox_item_id>\d+)/$', 'inbox_item_detail', name='inbox_item_detail'),
+    url(r'^inbox_items/(?P<inbox_item_id>\d+)/done/$', 'inbox_item_done', name='inbox_item_done'),
 )

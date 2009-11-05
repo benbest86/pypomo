@@ -1,21 +1,28 @@
+import datetime
+
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.core.urlresolvers import reverse
 
-from pomodoro.models import TaskSheet, Task, InboxItem, Reflection, Pomodoro, \
-        InternalInterruption, ExternalInterruption
-from pomodoro.forms import TaskSheetForm, InboxItemForm, TaskForm
+from pomodoro.models import TaskSheet, Task, InboxItem, Reflection, Pomodoro, Mark
+from pomodoro.forms import TaskSheetForm, InboxItemForm, TaskForm, MarkForm
 
 # task sheets
 
 def active_sheet(request):
     active_sheet = TaskSheet.objects.get_current()
     if active_sheet is not None:
-        response = HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': task_sheet_id}))
+        response = HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': active_sheet.id}))
     else:
         response = HttpResponseRedirect(reverse('new_task_sheet'))
     return response
+
+def close_task_sheet(request, task_sheet_id):
+    task_sheet = get_object_or_404(TaskSheet, id=task_sheet_id)
+    if request.method == 'POST':
+        task_sheet.closed = datetime.datetime.now()
+    return HttpResponseRedirect(reverse('home'))
 
 def task_sheets_index(request, template_name='pomodoro/task_sheets_index.html'):
     if request.method == 'GET':
@@ -60,32 +67,12 @@ def task_sheet_detail(request, task_sheet_id, template_name='pomodoro/task_sheet
         raise Http404('No TaskSheet matches the given query.')
 
     # retrieve details
-    if request.method == 'GET':
-        inbox_item_form = InboxItemForm()
-        task_form = TaskForm()
-        return render_to_response(
-                template_name,
-                {
-                    'task_sheet': task_sheet,
-                    'inbox_item_form': inbox_item_form,
-                    'task_form': task_form,
-                    },
-                context_instance=RequestContext(request),
-                )
-        # update existing resource
-    elif request.method == 'POST':
+    if request.method == 'POST':
         form = TaskSheetForm(request.POST, instance=task_sheet)
         # if form saves, return detail for saved resource
         if form.is_valid():
             task_sheet = form.save()
-            return render_to_response(
-                    template_name,
-                    {
-                        'task_sheet': task_sheet,
-                        },
-                    context_instance=RequestContext(request),
-                    )
-            # if save fails, go back to edit_resource page
+        # if save fails, go back to edit_resource page
         else:
             return render_to_response(
                     'pomodoro/edit_task_sheet.html',
@@ -95,6 +82,19 @@ def task_sheet_detail(request, task_sheet_id, template_name='pomodoro/task_sheet
                         },
                     context_instance=RequestContext(request),
                     )
+    inbox_item_form = InboxItemForm()
+    task_form = TaskForm()
+    current_pomodoro = Pomodoro.objects.get_current()
+    return render_to_response(
+            template_name,
+            {
+                'task_sheet': task_sheet,
+                'inbox_item_form': inbox_item_form,
+                'task_form': task_form,
+                'current_pomodoro': current_pomodoro,
+                },
+            context_instance=RequestContext(request),
+            )
 
 def edit_task_sheet(request, task_sheet_id, template_name='pomodoro/edit_task_sheet.html'):
     if request.method == 'POST':
@@ -115,6 +115,13 @@ def delete_task_sheet(request, task_sheet_id):
         task_sheet.delete()
         return HttpResponseRedirect(reverse('task_sheets_index'))
     
+def complete_task(request, task_sheet_id, task_id):
+    task_sheet = get_object_or_404(TaskSheet, id=task_sheet_id)
+    task = get_object_or_404(Task, task_sheet=task_sheet, id=task_id)
+    if request.method == 'POST':
+        task.completed = datetime.datetime.now()
+        task.save()
+    return HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': task_sheet.id }))
 def tasks_index(request, task_sheet_id, template_name='pomodoro/tasks_index.html'):
     task_sheet = get_object_or_404(TaskSheet, id=task_sheet_id)
     if request.method == 'GET':
@@ -223,6 +230,12 @@ def delete_task(request, task_sheet_id, task_id):
     
 
 
+def inbox_item_done(request, inbox_item_id):
+    inbox_item = get_object_or_404(InboxItem, id=inbox_item_id)
+    if request.method == 'POST':
+        inbox_item.dealt_with = datetime.datetime.now()
+        inbox_item.save()
+    return HttpResponseRedirect(reverse('home'))
 def inbox_items_index(request, template_name='pomodoro/inbox_items_index.html'):
     if request.method == 'GET':
         inbox_items = InboxItem.objects.filter(dealt_with=False)
@@ -435,33 +448,31 @@ def delete_reflection(request, task_sheet_id, reflection_id):
 
 def complete_pomodoro(request):
     current_pomodoro = Pomodoro.objects.get_current()
-    if current_pomodoro is not None:
-        current_pomodoro.end = datetime.datetime.now()
+    if request.method == 'POST' and current_pomodoro is not None:
+        current_pomodoro.completed = datetime.datetime.now()
         current_pomodoro.save()
     current_task_sheet = TaskSheet.objects.get_current()
     if current_task_sheet:
         response = HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': current_task_sheet.id}))
     else:
-        response = HttpResponseRedirect(reverse('task_sheets_index'))
+        response = HttpResponseRedirect(reverse('home'))
     return response
 
 def cancel_pomodoro(request):
     current_pomodoro = Pomodoro.objects.get_current()
-    if current_pomodoro is not None:
-        current_pomodoro.cancelled = True
-        current_pomodoro.end = datetime.datetime.now()
-        current_pomodoro.save()
+    if current_pomodoro is not None and request.method == 'POST':
+        current_pomodoro.delete()
     current_task_sheet = TaskSheet.objects.get_current()
     if current_task_sheet:
         response = HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': current_task_sheet.id}))
     else:
-        response = HttpResponseRedirect(reverse('task_sheets_index'))
+        response = HttpResponseRedirect(reverse('home'))
     return response
 
 
 def pomodoros_index(request, task_sheet_id, task_id, template_name='pomodoro/pomodoros_index.html'):
     task_sheet = get_object_or_404(TaskSheet, id=task_sheet_id)
-    task = get_object_or_404(Task, task_sheet=TaskSheet, id=task_id)
+    task = get_object_or_404(Task, task_sheet=task_sheet, id=task_id)
     if request.method == 'GET':
         pomodoros = Pomodoro.objects.filter(task=task)
         return render_to_response(
@@ -473,26 +484,13 @@ def pomodoros_index(request, task_sheet_id, task_id, template_name='pomodoro/pom
                 context_instance=RequestContext(request),
                 )
     elif request.method == 'POST':
-        form = PomodoroForm(request.POST)
-        if form.is_valid():
-            pomodoro = form.save(commit=False)
-            pomodoro.task = task
-            pomodoro.save()
-            return HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': task_sheet_id,}))
-        else:
-            template_name = 'pomodoro/new_pomodoro.html'
-            return render_to_response(
-                    template_name,
-                    {
-                        'form': form,
-                        'task': task,
-                        },
-                    context_instance=RequestContext(request),
-                    )
+        if not Pomodoro.objects.get_current():
+            Pomodoro.objects.create(task=task)
+        return HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': task_sheet_id,}))
 
 def pomodoro_detail(request, task_sheet_id, task_id, pomodoro_id, template_name='pomodoro/pomodoro_detail.html'):
     task_sheet = get_object_or_404(TaskSheet, id=task_sheet_id)
-    task = get_object_or_404(Task, task_sheet=TaskSheet, id=task_id)
+    task = get_object_or_404(Task, task_sheet=task_sheet, id=task_id)
     pomodoro = get_object_or_404(Pomodoro, task=task, id=pomodoro_id)
     # retrieve details
     if request.method == 'GET':
@@ -533,7 +531,7 @@ def pomodoro_detail(request, task_sheet_id, task_id, pomodoro_id, template_name=
 def add_internal_interruption(request):
     current_pomodoro = Pomodoro.objects.get_current()
     if current_pomodoro is not None:
-        InternalInterruption.objects.create(task=current_pomodoro.task)
+        Mark.objects.create(task=current_pomodoro.task, type='internal')
     current_task_sheet = TaskSheet.objects.get_current()
     if current_task_sheet:
         response = HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': current_task_sheet.id}))
@@ -542,41 +540,11 @@ def add_internal_interruption(request):
     return response
 
 
-def internal_interruptions_index(request, task_sheet_id, task_id, template_name='pomodoro/internal_interruptions_index.html'):
-    task_sheet = get_object_or_404(TaskSheet, id=task_sheet_id)
-    task = get_object_or_404(Task, task_sheet=TaskSheet, id=task_id)
-    if request.method == 'GET':
-        internal_interruptions = InternalInterruption.objects.filter(task=task)
-        return render_to_response(
-                template_name,
-                {
-                    'task': task,
-                    'internal_interruptions': internal_interruptions,
-                    },
-                context_instance=RequestContext(request),
-                )
-    elif request.method == 'POST':
-        form = InternalInterruptionForm(request.POST)
-        if form.is_valid():
-            internal_interruption = form.save(commit=False)
-            internal_interruption.task = task
-            internal_interruption.save()
-            return HttpResponseRedirect(reverse('internal_interruption_detail', kwargs={'task_id': task.id, 'internal_interruption_id': internal_interruption.id}))
-        else:
-            template_name = 'pomodoro/new_internal_interruption.html'
-            return render_to_response(
-                    template_name,
-                    {
-                        'form': form,
-                        'task': task,
-                        },
-                    context_instance=RequestContext(request),
-                    )
 
 def add_external_interruption(request):
     current_pomodoro = Pomodoro.objects.get_current()
     if current_pomodoro is not None:
-        ExternalInterruption.objects.create(task=current_pomodoro.task)
+        Mark.objects.create(task=current_pomodoro.task, type='external')
     current_task_sheet = TaskSheet.objects.get_current()
     if current_task_sheet:
         response = HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': current_task_sheet.id}))
@@ -585,35 +553,23 @@ def add_external_interruption(request):
     return response
 
 
-def external_interruptions_index(request, task_sheet_id, task_id, template_name='pomodoro/external_interruptions_index.html'):
+def marks_index(request, task_sheet_id, task_id, template_name='pomodoro/marks_index.html'):
     task_sheet = get_object_or_404(TaskSheet, id=task_sheet_id)
-    task = get_object_or_404(Task, task_sheet=TaskSheet, id=task_id)
+    task = get_object_or_404(Task, task_sheet=task_sheet, id=task_id)
     if request.method == 'GET':
-        external_interruptions = ExternalInterruption.objects.filter(task=task)
+        marks = Mark.objects.filter(task=task)
         return render_to_response(
                 template_name,
                 {
                     'task': task,
-                    'external_interruptions': external_interruptions,
+                    'marks': marks,
                     },
                 context_instance=RequestContext(request),
                 )
     elif request.method == 'POST':
-        form = ExternalInterruptionForm(request.POST)
+        form = MarkForm(request.POST)
         if form.is_valid():
-            external_interruption = form.save(commit=False)
-            external_interruption.task = task
-            external_interruption.save()
-            return HttpResponseRedirect(reverse('external_interruption_detail', kwargs={'task_id': task.id, 'external_interruption_id': external_interruption.id}))
-        else:
-            template_name = 'pomodoro/new_external_interruption.html'
-            return render_to_response(
-                    template_name,
-                    {
-                        'form': form,
-                        'task': task,
-                        },
-                    context_instance=RequestContext(request),
-                    )
-
-
+            mark = form.save(commit=False)
+            mark.task = task
+            mark.save()
+    return HttpResponseRedirect(reverse('task_sheet_detail', kwargs={'task_sheet_id': current_task_sheet.id}))
