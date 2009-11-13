@@ -133,4 +133,4 @@ def add_pomodoro_mark(sender, instance, created, **kwargs):
     if instance.completed:
         Mark.objects.create(task=instance.task, type='pomodoro')
 
-post_save.connect(add_pomodoro_mark, sender=Pomodoro)
+post_save.connect(add_pomodoro_mark, sender=Pomodoro, dispatch_uid='add_pomodoro_mark')
