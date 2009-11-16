@@ -1,5 +1,5 @@
 from django import forms
-from pomodoro.models import TaskSheet, Task, InboxItem, Mark
+from pomodoro.models import TaskSheet, PomodoroTask, InboxItem, Mark
 
 class TaskSheetForm(forms.ModelForm):
     class Meta:
@@ -13,7 +13,7 @@ class InboxItemForm(forms.ModelForm):
 
 class TaskForm(forms.ModelForm):
     class Meta:
-        model = Task
+        model = PomodoroTask
         fields = ('name', 'estimate',)
 
 class MarkForm(forms.ModelForm):

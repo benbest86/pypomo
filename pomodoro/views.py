@@ -27,27 +27,35 @@ def close_task_sheet(request, task_sheet_id):
 def task_sheets_index(request, template_name='pomodoro/task_sheets_index.html'):
     if request.method == 'GET':
         task_sheets = TaskSheet.objects.all()
-        return render_to_response(
-                template_name,
-                {
-                    'task_sheets': task_sheets,
-                    },
-                context_instance=RequestContext(request),
-                )
+        if request.is_ajax():
+            response = HttpResponse(json.dumps([sheet.serialize() for sheet in task_sheets]))
+        else:
+            response =  render_to_response(
+                    template_name,
+                    {
+                        'task_sheets': task_sheets,
+                        },
+                    context_instance=RequestContext(request),
+                    )
     elif request.method == 'POST':
         form = TaskSheetForm(request.POST)
         if form.is_valid():
             task_sheet = form.save()
-            return HttpResponseRedirect(
-                    reverse('task_sheet_detail', kwargs={'task_sheet_id': task_sheet.id}))
+            if request.is_ajax():
+                response = HttpResponse(json.dumps(task_sheet.serialize()))
+            else:
+                response =  HttpResponseRedirect(
+                        reverse('task_sheet_detail', kwargs={'task_sheet_id': task_sheet.id}))
         else:
-            return render_to_response(
+            # need to serialize form errors here
+            response =  render_to_response(
                     'pomodoro/new_task_sheet.html',
                     {
                         'form': form,
                         },
                     context_instance=RequestContext(request),
                     )
+    return response
 
 def new_task_sheet(request, template_name='pomodoro/new_task_sheet.html'):
     if request.method == 'POST':
@@ -60,6 +68,7 @@ def new_task_sheet(request, template_name='pomodoro/new_task_sheet.html'):
                 },
             context_instance=RequestContext(request),
             )
+
 def task_sheet_detail(request, task_sheet_id, template_name='pomodoro/task_sheet_detail.html'):
     try:
         task_sheet = TaskSheet.objects.select_related().get(id=task_sheet_id)

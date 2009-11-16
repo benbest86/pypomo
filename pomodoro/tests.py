@@ -6,18 +6,22 @@ Replace these with more appropriate tests for your application.
 """
 
 from django.test import TestCase
+from projects.models import Project
+from pomodoro.models import PomodoroTask
+from django.core import serializers
 
-class SimpleTest(TestCase):
-    def test_basic_addition(self):
-        """
-        Tests that 1 + 1 always equals 2.
-        """
-        self.failUnlessEqual(1 + 1, 2)
+class TestTaskSerialization(TestCase):
 
-__test__ = {"doctest": """
-Another way to test that 1 + 1 is equal to 2.
+    def setUp(self):
+        self.default_project = Project.objects.create(
+                name='test project', success_statement='a passing test')
 
->>> 1 + 1 == 2
-True
-"""}
+    def tearDown(self):
+        PomodoroTask.objects.all().delete()
+        Project.objects.all().delete()
 
+
+    def test_serialize_barebones_task(self):
+        task = PomodoroTask.objects.create(
+                project=self.default_project, name='a barebones task')
+        serialized = task.serialize()
