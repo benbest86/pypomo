@@ -27,6 +27,8 @@ class Task(models.Model):
     due = models.DateField(blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
     completed = models.DateTimeField(blank=True, null=True)
+    estimate = models.SmallIntegerField(null=True, blank=True)
+    actual = models.SmallIntegerField(null=True, blank=True)
 
     def __unicode__(self):
         return self.name
@@ -43,5 +45,7 @@ class Task(models.Model):
             serialized['project'] = project.serialize()
         else:
             serialized['project'] = self.project_id
+        serialized['estimate'] = self.estimate and str(self.estimate) or None
+        serialized['actual'] = self.estimate and str(self.estimate) or None
         return serialized
 

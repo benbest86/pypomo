@@ -7,20 +7,6 @@ from projects.models import Task
 
 # see http://www.pomodorotechnique.com/ for the inspiration for this app
 
-class PomodoroTask(Task):
-    """
-    Adds estimate and actual values to the Pomodoro model
-    and adds Pomodoro specific functionality to it.
-    """
-    estimate = models.SmallIntegerField(null=True, blank=True)
-    actual = models.SmallIntegerField(null=True, blank=True)
-
-    def serialize(self, recursive=False):
-        serialized = super(PomodoroTask, self).serialize(recursive)
-        serialized['estimate'] = self.estimate and str(self.estimate) or None
-        serialized['actual'] = self.estimate and str(self.estimate) or None
-        return serialized
-
 class TaskSheetManager(models.Manager):
 
     def get_current(self):
@@ -47,7 +33,7 @@ class TaskSheet(models.Model):
     location = models.CharField(max_length=50)
     opened = models.DateTimeField(null=True, blank=True)
     closed = models.DateTimeField(null=True, blank=True)
-    tasks = models.ManyToManyField(PomodoroTask, through="TaskOnSheet", related_name='task_sheets')
+    tasks = models.ManyToManyField(Task, through="TaskOnSheet", related_name='task_sheets')
 
     objects = TaskSheetManager()
 
@@ -78,7 +64,7 @@ class TaskOnSheet(models.Model):
     Allows each Mark to be associated with a task on a task sheet instead
     of just a task.
     """
-    task = models.ForeignKey(PomodoroTask, related_name='tasks_on_sheet')
+    task = models.ForeignKey(Task, related_name='tasks_on_sheet')
     task_sheet = models.ForeignKey(TaskSheet, related_name='tasks_on_sheet')
 
 class InboxItem(models.Model):

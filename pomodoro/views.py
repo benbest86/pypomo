@@ -5,7 +5,8 @@ from django.template import RequestContext
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.core.urlresolvers import reverse
 
-from pomodoro.models import TaskSheet, Task, InboxItem, Reflection, Pomodoro, Mark
+from projects.models import Task
+from pomodoro.models import TaskSheet, InboxItem, Reflection, Pomodoro, Mark
 from pomodoro.forms import TaskSheetForm, InboxItemForm, TaskForm, MarkForm
 
 # task sheets
