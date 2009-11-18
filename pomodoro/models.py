@@ -98,12 +98,12 @@ class Mark(models.Model):
         return self.get_type_display()
     def serialize(self, recursive=False):
         serialized = {
-                'id', self.id,
-                'time', str(self.time),
-                'type', self.type,
-                'type_display', self.get_type_display(),
-                'task', self.task_on_sheet.task.id,
-                'task_sheet', self.task_on_sheet.task_sheet.id,
+                'id': self.id,
+                'time': str(self.time),
+                'type': self.type,
+                'type_display': self.get_type_display(),
+                'task': self.task_on_sheet.task.id,
+                'task_sheet': self.task_on_sheet.task_sheet.id,
                 }
         return serialized
 

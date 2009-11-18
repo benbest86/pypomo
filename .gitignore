@@ -10,3 +10,6 @@
 
 # ignore local_settings.py
 local_settings.py
+
+# ignore output from pyjamas
+media/output
